@@ -51,9 +51,15 @@ jobs:
           export use_mail_wasm_parser=${{ secrets.BACKEND_USE_MAIL_WASM_PARSER }}
           
           cd worker/
-          # 如果有配置 BACKEND_TOML 则写入，没有则保留仓库自带的 wrangler.toml
+          
+          # ✅ 核心修复：如果配置了 BACKEND_TOML 秘钥则写入，否则自动生成一个默认配置，防止找不到入口
           if [ -n "$WRANGLER_TOML_CONTENT" ]; then
             printf '%s\n' "$WRANGLER_TOML_CONTENT" > wrangler.toml
+          elif [ ! -f wrangler.toml ]; then
+            echo "Creating default wrangler.toml..."
+            echo 'name = "grok-mail-api"' > wrangler.toml
+            echo 'main = "src/index.ts"' >> wrangler.toml
+            echo 'compatibility_date = "2024-03-20"' >> wrangler.toml
           fi
           
           pnpm install --no-frozen-lockfile
@@ -65,7 +71,6 @@ jobs:
             echo "Applied mail-parser-wasm-worker patch"
           fi
 
-          # ✅ 修正为正确的 --autoconfig=false（不带横杠）
           pnpm wrangler deploy --autoconfig=false
           
           echo "Deployed for tag ${{ github.ref_name }}"
