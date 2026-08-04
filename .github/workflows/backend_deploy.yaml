@@ -37,7 +37,8 @@ jobs:
           
           if [ -n "$use_worker_assets" ]; then
             cd frontend/
-            pnpm config set only-built-dependencies '["*"]'
+            echo "only-built-dependencies[]=esbuild" > .npmrc
+            echo "only-built-dependencies[]=vite" >> .npmrc
             pnpm install --no-frozen-lockfile
             if [ -n "$use_worker_assets_with_telegram" ]; then
               echo "Building with telegram pages"
@@ -56,7 +57,11 @@ jobs:
           # ✅ 修复核心：使用环境变量写入，避免 Shell 解析特殊字符
           printf '%s\n' "$WRANGLER_TOML_CONTENT" > wrangler.toml
           
-          pnpm config set only-built-dependencies '["*"]'
+          # ✅ 允许 pnpm 运行核心依赖的构建脚本
+          echo "only-built-dependencies[]=esbuild" > .npmrc
+          echo "only-built-dependencies[]=workerd" >> .npmrc
+          echo "only-built-dependencies[]=core-js-pure" >> .npmrc
+          
           pnpm install --no-frozen-lockfile
 
           if [ -n "$use_mail_wasm_parser" ]; then
