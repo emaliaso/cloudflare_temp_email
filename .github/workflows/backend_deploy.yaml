@@ -65,8 +65,8 @@ jobs:
             echo "Applied mail-parser-wasm-worker patch"
           fi
 
-          # ✅ 加上 --yes 自动跳过交互提示，直接部署
-          pnpm wrangler deploy --yes
+          # ✅ 恢复标准的 deploy 运行命令
+          pnpm run deploy
           
           echo "Deployed for tag ${{ github.ref_name }}"
         env:
