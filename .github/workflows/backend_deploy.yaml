@@ -52,13 +52,21 @@ jobs:
           
           cd worker/
           
-          # ✅ 核心修复：如果配置了 BACKEND_TOML 秘钥则写入，否则自动生成一个默认配置，防止找不到入口
+          # 智能处理 wrangler.toml：优先使用密钥，其次复制自带的 example，最后自动检测入口
           if [ -n "$WRANGLER_TOML_CONTENT" ]; then
             printf '%s\n' "$WRANGLER_TOML_CONTENT" > wrangler.toml
+          elif [ -f wrangler.toml.example ]; then
+            cp wrangler.toml.example wrangler.toml
+            echo "Using wrangler.toml.example"
           elif [ ! -f wrangler.toml ]; then
-            echo "Creating default wrangler.toml..."
+            echo "Creating smart default wrangler.toml..."
+            # 自动寻找实际存在的入口文件
+            ENTRY_FILE=$(find . -maxdepth 3 \( -name "index.ts" -o -name "index.js" -o -name "worker.ts" -o -name "worker.js" \) | head -n 1 | sed 's|^\./||')
+            if [ -z "$ENTRY_FILE" ]; then
+              ENTRY_FILE="src/index.ts"
+            fi
             echo 'name = "grok-mail-api"' > wrangler.toml
-            echo 'main = "src/index.ts"' >> wrangler.toml
+            echo "main = \"$ENTRY_FILE\"" >> wrangler.toml
             echo 'compatibility_date = "2024-03-20"' >> wrangler.toml
           fi
           
