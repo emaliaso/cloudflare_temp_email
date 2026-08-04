@@ -7,7 +7,9 @@ import { getFingerprint } from '../utils/fingerprint'
 import { safeBearerHeader, safeHeaderValue } from '../utils/headers'
 import { sanitizeHtml } from '../utils/sanitize-html'
 
-const API_BASE = import.meta.env.VITE_API_BASE || "";
+// 强制硬编码你的后端 Worker 地址，彻底解决 405 和路径丢失问题
+const API_BASE = import.meta.env.VITE_API_BASE || "https://grok-mail-api.260206363.workers.dev";
+
 const {
     loading, auth, jwt, settings, openSettings,
     userOpenSettings, userSettings, announcement,
@@ -23,12 +25,8 @@ const instance = axios.create({
 const apiFetch = async (path, options = {}) => {
     loading.value = true;
     try {
-        // Get browser fingerprint for request tracking
         const fingerprint = await getFingerprint();
 
-        // Skip auth headers whose value is empty / "undefined" / contains
-        // control chars (otherwise axios throws "Invalid character in header
-        // content" before the request is sent — see issue #1000).
         const headers = {
             'x-lang': i18n.global.locale.value,
             'x-fingerprint': fingerprint,
@@ -73,7 +71,8 @@ const apiFetch = async (path, options = {}) => {
 
 const getOpenSettings = async (message, notification) => {
     try {
-        const res = await api.fetch("/open_api/settings");
+        // 修复原代码里写错的 api.fetch
+        const res = await apiFetch("/open_api/settings");
         const domains = Array.isArray(res["domains"]) ? res["domains"] : [];
         const domainLabels = res["domainLabels"] || [];
         if (domains.length < 1) {
@@ -141,7 +140,7 @@ const getSettings = async () => {
         if (typeof jwt.value != 'string' || jwt.value.trim() === '' || jwt.value === 'undefined') {
             return "";
         }
-        const res = await apiFetch("/api/settings");;
+        const res = await apiFetch("/api/settings");
         settings.value = {
             address: res["address"],
             auto_reply: res["auto_reply"],
@@ -152,10 +151,10 @@ const getSettings = async () => {
     }
 }
 
-
 const getUserOpenSettings = async (message) => {
     try {
-        const res = await api.fetch(`/user_api/open_settings`);
+        // 修复原代码里写错的 api.fetch
+        const res = await apiFetch(`/user_api/open_settings`);
         Object.assign(userOpenSettings.value, res);
     } catch (error) {
         message.error(error.message || "fetch settings failed");
@@ -167,12 +166,11 @@ const getUserOpenSettings = async (message) => {
 const getUserSettings = async (message) => {
     try {
         if (!userJwt.value) return;
-        const res = await api.fetch("/user_api/settings")
+        const res = await apiFetch("/user_api/settings")
         Object.assign(userSettings.value, res)
-        // auto refresh user jwt
         if (userSettings.value.new_user_token) {
             try {
-                await api.fetch("/user_api/settings", {
+                await apiFetch("/user_api/settings", {
                     userJwt: userSettings.value.new_user_token,
                 })
                 userJwt.value = userSettings.value.new_user_token;
