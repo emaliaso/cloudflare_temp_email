@@ -65,8 +65,8 @@ jobs:
             echo "Applied mail-parser-wasm-worker patch"
           fi
 
-          # ✅ 加上 --auto-config=false 禁用水土不服的自动框架配置
-          pnpm wrangler deploy --auto-config=false
+          # ✅ 修正为正确的 --autoconfig=false（不带横杠）
+          pnpm wrangler deploy --autoconfig=false
           
           echo "Deployed for tag ${{ github.ref_name }}"
         env:
