@@ -52,22 +52,22 @@ jobs:
           
           cd worker/
           
-          # 智能处理 wrangler.toml 并强制加上 nodejs_compat 兼容标志
+          # ✅ 完美适配：优先使用密钥，其次自动复制仓库自带的 wrangler.toml.template
           if [ -n "$WRANGLER_TOML_CONTENT" ]; then
             printf '%s\n' "$WRANGLER_TOML_CONTENT" > wrangler.toml
-          elif [ -f wrangler.toml.example ]; then
-            cp wrangler.toml.example wrangler.toml
-            echo "Using wrangler.toml.example"
+          elif [ -f wrangler.toml.template ]; then
+            cp wrangler.toml.template wrangler.toml
+            echo "Using wrangler.toml.template"
           fi
           
-          # 确保 wrangler.toml 存在并且包含 nodejs_compat 标志
+          # 兜底：如果还没有则生成正确的配置（入口为 src/worker.ts）
           if [ ! -f wrangler.toml ]; then
-            echo 'name = "grok-mail-api"' > wrangler.toml
-            echo 'main = "src/index.ts"' >> wrangler.toml
-            echo 'compatibility_date = "2024-03-20"' >> wrangler.toml
+            echo 'name = "cloudflare_temp_email"' > wrangler.toml
+            echo 'main = "src/worker.ts"' >> wrangler.toml
+            echo 'compatibility_date = "2024-09-23"' >> wrangler.toml
           fi
           
-          # 检查并追加 nodejs_compat 标志
+          # 确保开启 nodejs_compat 兼容标志
           if ! grep -q "nodejs_compat" wrangler.toml; then
             echo 'compatibility_flags = ["nodejs_compat"]' >> wrangler.toml
           fi
